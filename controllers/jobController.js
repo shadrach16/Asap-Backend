@@ -120,13 +120,12 @@ const job = await Job.create({
 
 const getJobs = asyncHandler(async (req, res) => {
  
-
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
   const skip = (page - 1) * limit;
 
   const {
-    sort, // Will be 'relevance', '-createdAt', etc.
+    sort,
     searchTerm,
     category,
     skills,
@@ -139,11 +138,17 @@ const getJobs = asyncHandler(async (req, res) => {
   // --- 2. Build Initial Match Stage ---
   const initialMatch = { status: 'open' };
   
-  // --- UPDATED: Text search logic ---
+ 
   if (searchTerm) {
-    initialMatch.$text = { $search: searchTerm };
+    initialMatch.$or = [
+      { title: { $regex: searchTerm, $options: 'i' } },
+      { description: { $regex: searchTerm, $options: 'i' } },
+      // --- FIX 2: REMOVED the line for 'skills' ---
+      // You cannot run $regex on an array of ObjectIDs.
+      // Filtering by skills is handled by the 'skills' query param below.
+    ];
   }
-  
+
   // ... (Category, Location, Skills, Budget filters remain the same)
   if (category && mongoose.Types.ObjectId.isValid(category)) {
     initialMatch.category = new mongoose.Types.ObjectId(category);
@@ -151,6 +156,7 @@ const getJobs = asyncHandler(async (req, res) => {
   if (location) {
     initialMatch.location = { $regex: location, $options: 'i' };
   }
+  // This block is the CORRECT way to filter by skills
   if (skills) {
     const skillIds = skills.split(',')
                            .map(id => id.trim())
@@ -169,6 +175,7 @@ const getJobs = asyncHandler(async (req, res) => {
   // --- 3. Build Aggregation Pipeline ---
   let pipeline = [
     { $match: initialMatch },
+    // 
     {
       $lookup: {
         from: 'proposals',
@@ -180,8 +187,8 @@ const getJobs = asyncHandler(async (req, res) => {
     {
       $addFields: {
         proposalCount: { $size: '$proposals' },
-        // --- ADD SCORE FIELD IF SEARCHING ---
-        score: searchTerm ? { $meta: "textScore" } : 0 
+        // --- FIX 1: REMOVED score: { $meta: "textScore" } ---
+        // This field is not available when using $regex.
       }
     }
   ];
@@ -200,9 +207,10 @@ const getJobs = asyncHandler(async (req, res) => {
 
   // --- 5. UPDATED: Add Sorting Logic ---
   let sortStage = {};
-  if (sort === 'relevance' && searchTerm) {
-    sortStage = { score: -1 }; // Sort by text search score
-  } else if (sort === '-createdAt') {
+  // --- FIX 1: REMOVED 'relevance' sort option ---
+  // We can no longer sort by 'score' as it doesn't exist.
+  // We default to 'createdAt' instead.
+  if (sort === '-createdAt') {
     sortStage = { createdAt: -1 };
   } else {
     sortStage = { createdAt: -1 }; // Default to most recent
@@ -218,6 +226,7 @@ const getJobs = asyncHandler(async (req, res) => {
       data: [
         { $skip: skip },
         { $limit: limit },
+        // We do lookups *after* filtering/sorting for performance.
         { $lookup: { from: 'users', localField: 'client', foreignField: '_id', as: 'client' } },
         { $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' } },
         { $lookup: { from: 'skills', localField: 'skills', foreignField: '_id', as: 'skills' } },
@@ -225,7 +234,7 @@ const getJobs = asyncHandler(async (req, res) => {
         { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
         {
           $project: {
- 
+            // Remove fields we don't need to send to the client
             title: 1,
             description: 1,
             budget: 1,

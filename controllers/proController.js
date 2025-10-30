@@ -301,10 +301,19 @@ const findServices = asyncHandler(async (req, res) => {
     isActive: true // Only show active services
   };
 
-  // Text search
+
+
   if (searchTerm) {
-    initialMatch.$text = { $search: searchTerm };
+    initialMatch.$or = [
+      { title: { $regex: searchTerm, $options: 'i' } },
+      { description: { $regex: searchTerm, $options: 'i' } },
+      // --- FIX 2: REMOVED the line for 'skills' ---
+      // You cannot run $regex on an array of ObjectIDs.
+      // Filtering by skills is handled by the 'skills' query param below.
+    ];
   }
+
+
   
   // Category filter
   if (category && mongoose.Types.ObjectId.isValid(category)) {
@@ -327,11 +336,7 @@ const findServices = asyncHandler(async (req, res) => {
   let pipeline = [
     { $match: initialMatch },
     // --- 3. Add Sort (by relevance if searching, else by 'sort' param) ---
-    { 
-      $sort: (searchTerm && sort === 'relevance') 
-        ? { score: { $meta: "textScore" } } 
-        : { [sort.replace('-', '')]: sort.startsWith('-') ? -1 : 1 } 
-    },
+   
     // --- 4. Pagination & Data Projection ---
     {
       $facet: {
@@ -369,6 +374,17 @@ const findServices = asyncHandler(async (req, res) => {
     }
   ];
 
+ let sortStage = {};
+  // --- FIX 1: REMOVED 'relevance' sort option ---
+  // We can no longer sort by 'score' as it doesn't exist.
+  // We default to 'createdAt' instead.
+  if (sort === '-createdAt') {
+    sortStage = { createdAt: -1 };
+  } else {
+    sortStage = { createdAt: -1 }; // Default to most recent
+  }
+  pipeline.push({ $sort: sortStage });
+  
   // --- 5. Execute Aggregation ---
   const results = await Service.aggregate(pipeline);
 
