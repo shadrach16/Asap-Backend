@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Message on <%= appName %></title>
+    <style> /* Add basic inline styles */
+        body { font-family: sans-serif; color: #333; }
+        a { color: #10B981; text-decoration: none; }
+        .button { background-color: #10B981; color: white; padding: 10px 15px; border-radius: 5px; display: inline-block; text-align: center; }
+    </style>
+</head>
+<body>
+    <p>Hi <%= recipientName %>,</p>
+    <p>You have received a new message from <strong><%= senderName %></strong> regarding the project: "<%= jobTitle %>".</p>
+    <% if (messagePreview) { %>
+        <p style="padding: 10px; border-left: 3px solid #eee; color: #555;"><em>"<%= messagePreview %>..."</em></p>
+    <% } %>
+    <p>Please log in to view the full message and respond:</p>
+    <p><a href="<%= linkUrl %>" class="button">View Message</a></p>
+    <p>Alternatively, copy and paste this link into your browser:<br><%= linkUrl %></p>
+    <p>Thanks,<br>The <%= appName %> Team</p>
+</body>
+</html>

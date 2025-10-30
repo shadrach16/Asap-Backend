@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Proposal Received on <%= appName %></title>
+    <style> /* Add basic inline styles */
+        body { font-family: sans-serif; color: #333; }
+        a { color: #10B981; text-decoration: none; }
+        .button { background-color: #10B981; color: white; padding: 10px 15px; border-radius: 5px; display: inline-block; text-align: center; }
+    </style>
+</head>
+<body>
+    <p>Hi <%= recipientName %>,</p>
+    <p><strong><%= proName %></strong> has submitted a proposal for your job posting: "<%= jobTitle %>".</p>
+    <p>Log in to review the proposal details and compare candidates:</p>
+    <p><a href="<%= linkUrl %>" class="button">View Proposal</a></p>
+    <p>Alternatively, copy and paste this link into your browser:<br><%= linkUrl %></p>
+    <p>Thanks,<br>The <%= appName %> Team</p>
+</body>
+</html>
