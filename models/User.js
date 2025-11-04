@@ -77,6 +77,22 @@ const userSchema = new mongoose.Schema(
     }],
     // --- End Pro Specific ---
 
+    complianceStatus: { 
+        type: String,
+        enum: ['pending', 'submitted', 'in_review', 'approved', 'rejected', 'expired'],
+        default: 'pending', // Default status for new users
+    },
+    // The relationship is implicitly one-to-one via the 'user' field in ComplianceRequest.
+    // If you wish to store the reference here too:
+    complianceRequest: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ComplianceRequest',
+        select: false, // Don't fetch by default
+    },
+    
+    isKycVerified: { type: Boolean, default: false },
+
+
     stripeAccountId: { type: String, select: false },
     stripeOnboardingComplete: { type: Boolean, default: false },
     stripeCustomerId: { type: String, select: false },

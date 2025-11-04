@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: { // Category for grouping or icons (e.g., 'message', 'proposal', 'booking', 'system')
         type: String,
-        enum: ['message', 'proposal', 'booking', 'milestone', 'dispute', 'review', 'system', 'announcement'],
+        enum: ['onboarding','message', 'proposal', 'booking', 'milestone', 'dispute', 'review', 'system', 'announcement'],
         default: 'system',
     },
     link: { // Optional URL to navigate to when clicked (relative path)

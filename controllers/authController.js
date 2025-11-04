@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const { generateToken } = require('../services/authService');
 const asyncHandler = require('../utils/asyncHandler');
+const { sendNotification } = require('../services/notificationService');
+
 
 /**
  * @desc    Register a new user
@@ -37,6 +39,19 @@ const registerUser = asyncHandler(async (req, res, next) => {
   if (user) {
     // Generate a token
     const token = generateToken(user._id);
+
+    try {
+      if (user.role === 'pro'){
+        sendNotification(null, null, user._id, 'USER_REGISTERED', {role:user.role}).catch(err => console.error("Failed to send USER_REGISTERED notification:", err));;
+      } else {
+        //   sendNotification(null, null, user._id, 'WELCOME', {role:user.role}).catch(err => console.error("Failed to send WELCOME notification:", err));;;
+
+      }
+    } catch (error) {
+        // Log the error but continue to allow registration to complete
+        console.error('Failed to send registration notification/email:', error);
+    }
+
 
     // Send back user data and token
     res.status(201).json({

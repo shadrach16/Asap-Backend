@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to <%= appName %> - Get Started</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <style type="text/css">
+        /* Client-specific resets (CRITICAL) */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+        /* Generic Body Styles */
+        body { margin: 0 !important; padding: 0 !important; background-color: #F4F4F4; }
+        p { margin: 0; padding: 0; }
+        /* General styling for links */
+        a { color: #FFB300; text-decoration: none; }
+    </style>
+
+    </head>
+<body style="margin: 0; padding: 0; background-color: #F4F4F4;">
+
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-height: 100vh; background-color: #F4F4F4;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+                    
+                    <tr>
+                        <td align="center" style="padding-bottom: 24px;">
+                            <a href="#" target="_blank" style="text-decoration: none;">
+                                <span style="font-size: 32px; font-weight: 700; color: #FFB300;">
+                                    <%= appName %>
+                                </span>
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 40px;">
+                            
+                            <h1 style="margin: 0 0 24px; font-size: 16px; font-weight: 700; color: #1F2937; line-height: 1.2;">
+                                Welcome Aboard, <%= recipientName %>!
+                            </h1>
+                            
+                            <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6; color: #4B5563;">
+                                Thank you for creating an account with <strong style="color: #1F2937;"><%= appName %></strong>. You're just a few steps away from accessing our premium services/talent.
+                            </p>
+                            
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0;">
+                                <tr>
+                                    <td style="background: #FFFBE6; border-left: 4px solid #FFB300; border-radius: 8px; padding: 20px 24px; font-size: 16px; line-height: 1.6; color: #4B5563;">
+                                        <p style="margin: 0;">
+                                            <strong style="color: #1F2937; display: block; margin-bottom: 8px;">Your Essential First Step:</strong>
+                                            Please click below to complete your profile verification and compliance onboarding. This is required to post jobs/submit proposals.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table border="0" cellspacing="0" cellpadding="0" style="margin: 32px 0;">
+                                <tr>
+                                    <td align="center" style="border-radius: 8px; background-color: #FFB300;">
+                                        <a href="<%= linkUrl %>" target="_blank"
+                                            style="display: inline-block; padding: 14px 32px; background-color: #FFB300; color: #1F2937 !important; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; line-height: 1.2; border: 1px solid #FFB300;">
+                                            <span style="color: #1F2937; text-decoration: none;">
+                                                Complete Onboarding &rarr;
+                                            </span>
+                                        </a>
+                                        </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #4B5563;">
+                                If you need assistance at any point, our support team is ready to help.
+                            </p>
+
+                            <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4B5563;">
+                                Best regards,<br>
+                                The <%= appName %> Team
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td align="center" style="padding: 40px 20px 20px;">
+                            <p style="margin: 0 0 8px; font-size: 12px; color: #9CA3AF; line-height: 1.5;">
+                                This email was sent to <%= recipientName %>.<br>© 2025 <%= appName %>. All rights reserved.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5;">
+                                <a href="#" style="color: #9CA3AF; text-decoration: underline; margin: 0 8px;">Help Center</a>
+                                <span style="color: #D1D5DB;">•</span>
+                                <a href="#" style="color: #9CA3AF; text-decoration: underline; margin: 0 8px;">Unsubscribe</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+                <p style="font-size: 12px; color: #9CA3AF; margin-top: 20px;">
+                    <span style="display: block; margin-bottom: 5px;">If the button doesn't work, copy and paste this URL:</span>
+                    <a href="<%= linkUrl %>" style="color: #9CA3AF; word-break: break-all;"><%= linkUrl %></a>
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

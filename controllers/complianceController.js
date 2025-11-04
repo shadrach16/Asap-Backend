@@ -54,11 +54,19 @@ const submitCompliance = asyncHandler(async (req, res) => {
     documentType: documentType,
     // 'url' is omitted as we no longer save it to Cloudinary here
   });
+
+  const user = await User.findById(complianceRequest.user);
+  if (user){
+      user.complianceStatus = 'in_review';
+    
+  }
+
   complianceRequest.status = 'in_review';
   complianceRequest.verificationProviderId = checkId;
   complianceRequest.rejectionReason = undefined; // Clear any previous rejection
 
   await complianceRequest.save();
+  await user.save();
 
   // 6. Send response
   res.status(200).json({
@@ -103,12 +111,18 @@ const handleKycWebhook = asyncHandler(async (req, res) => {
 
     if (check.result === 'clear') {
       complianceRequest.status = 'approved';
-      if(user) user.isKycVerified = true; // Update User model
+      if (user){
+      user.complianceStatus = 'approved';
+      user.isKycVerified = true; // Update User model
+      } 
     } else {
       complianceRequest.status = 'rejected';
       complianceRequest.rejectionReason =
         check.breakdown?.sub_result || 'Verification failed';
-      if(user) user.isKycVerified = false; // Update User model
+      if (user) {
+      user.isKycVerified= false;
+      user.complianceStatus = 'rejected';
+      }  // Update User model
     }
     
     await complianceRequest.save();

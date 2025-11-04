@@ -9,6 +9,11 @@ const submitProposal = asyncHandler(async (req, res) => {
     res.status(403); throw new Error('User is not authorized');
   }
 
+if ( req.user.complianceStatus !== 'approved') {
+        res.status(403);
+        throw new Error('Compliance check required. You cannot submit a proposal until your compliance status is approved.');
+    }
+
  const { jobId, bidAmount, coverLetter, estimatedDuration, currency, milestones } = req.body;
   const files = req.files; // Files from multer
 
@@ -75,7 +80,7 @@ const submitProposal = asyncHandler(async (req, res) => {
   await proposal.save();
 
   // --- Send Notification to the CLIENT ---
-  notificationService.sendNotification(job.client, 'PROPOSAL_RECEIVED', {
+  notificationService.sendNotification(null, null, job.client, 'PROPOSAL_RECEIVED', {
       proName: proUser.name,
       jobTitle: job.title,
       jobId: job._id,

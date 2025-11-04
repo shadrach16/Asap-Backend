@@ -27,6 +27,11 @@ const isPro = (req, res, next) => {
 const createService = asyncHandler(async (req, res) => {
     const { title, description, category, price, currency, revisions, deliveryTimeDays } = req.body;
 
+if (req.user.role === 'pro' && req.user.complianceStatus !== 'approved') {
+        res.status(403);
+        throw new Error('Compliance check required. You cannot create a service until your compliance status is approved.');
+    }
+    
     // --- 2. ADD 'category' TO VALIDATION ---
     if (!title || !description || !price || !deliveryTimeDays || !category) {
         res.status(400);

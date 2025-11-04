@@ -1,38 +1,58 @@
-const sgMail = require('@sendgrid/mail');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const dotenv = require('dotenv');
 const ejs = require('ejs');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
 dotenv.config();
 
-let isSendGridConfigured = false;
-if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
+let isEmailConfigured = false;
+
+if (process.env.EMAIL_SERVICE === 'gmail' && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+    isEmailConfigured = true;
+    console.log("Nodemailer email service configured (via Gmail/SMTP).");
+} 
+// --- Optional: Keep SendGrid as a fallback/alternative (or remove the old logic) ---
+else if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
+    // If you want to keep SendGrid as a fallback:
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    isSendGridConfigured = true;
+    isEmailConfigured = true;
     console.log("SendGrid email service configured.");
+    
+    // For this example, we assume you are replacing it.
+     console.warn("Email service not found/configured. Email notifications will be disabled.");
 } else {
-    console.warn("SendGrid API Key or From Email not found. Email notifications will be disabled.");
+    console.warn("Email service not found/configured. Email notifications will be disabled.");
 }
 
 /**
  * Sends an email using SendGrid.
  */
 const sendEmail = async (mailOptions) => {
-    if (!isSendGridConfigured) {
-        console.warn("Attempted to send email, but SendGrid is not configured.");
+    if (!isEmailConfigured) { // Use the new generic flag
+        console.warn("Attempted to send email, but email service is not configured.");
         return;
     }
+
     const msg = {
         to: mailOptions.to,
-        from: process.env.SENDGRID_FROM_EMAIL,
+        from: process.env.EMAIL_FROM || 'ASAP Marketplace <no-reply@asap.com>', // Use the new FROM environment variable
         subject: mailOptions.subject,
         text: mailOptions.text,
         html: mailOptions.html,
     };
+    
     try {
-        await sgMail.send(msg);
+        await transporter.sendMail(msg); // Use Nodemailer's sendMail
         console.log(`Email sent successfully to ${mailOptions.to}`);
     } catch (error) {
         console.error(`Error sending email to ${mailOptions.to}:`, error.response?.body || error.message);
@@ -49,7 +69,7 @@ const createInAppNotification = async (io, userSockets, userId, message, type, l
         });
         console.log(`In-app notification created for user ${userId}`);
 
-        const recipientSocketId = userSockets.get(userId.toString());
+        const recipientSocketId = userSockets?.get(userId.toString());
         if (io && recipientSocketId) {
             const unreadCount = await Notification.countDocuments({ user: userId, isRead: false });
             io.to(recipientSocketId).emit('newNotification', { notification, unreadCount });
@@ -134,6 +154,14 @@ const sendNotification = async (io, userSockets, userId, notificationTypeKey, da
              baseType = 'dispute';
              // templateName = 'disputeResolved.ejs'; // Create this template
              break;
+        case 'USER_REGISTERED':
+            message = `Welcome to ${appName}! Please complete your profile and onboarding to start working.`;
+            // Direct Pro users to onboarding, others to dashboard
+            link = data.role === 'pro' ? '/pro/onboarding' : '/dashboard';
+            subject = `Welcome to ${appName}! Complete Your Setup`;
+            baseType = 'onboarding';
+            templateName = 'userRegistered.ejs'; // We will create this template
+            break;
         default:
             console.warn(`Unknown notification type: ${notificationTypeKey}`);
             return;
@@ -154,7 +182,7 @@ const sendNotification = async (io, userSockets, userId, notificationTypeKey, da
 
      // 2. Send Email if enabled and template exists
      if (prefs.email && user.email && templateName) {
-          if (isSendGridConfigured) {
+          if (isEmailConfigured) {
             try {
                 const htmlContent = await ejs.renderFile(
                     path.join(__dirname, '../templates/emails', templateName),

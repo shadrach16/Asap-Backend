@@ -49,6 +49,8 @@ const acceptProposal = asyncHandler(async (req, res) => {
     throw new Error('This proposal is not in a submittable state.');
   }
 
+  console.log(proposal)
+
   // --- Create Booking ---
   const booking = new Booking({
     job: job._id,

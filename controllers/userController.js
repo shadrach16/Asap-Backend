@@ -296,6 +296,9 @@ const getUserProfile = asyncHandler(async (req, res) => {
       portfolio: user.portfolio,
       credits: user.credits,
       notificationPreferences: prefsObject, // Return as plain object
+    complianceStatus: user.complianceStatus, 
+    isKycVerified: user.isKycVerified, 
+
     });
   } else {
     res.status(404); throw new Error('User not found');
@@ -360,6 +363,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     credits: updatedUser.credits, // Include credits
     portfolio: updatedUser.portfolio, // Include portfolio
     notificationPreferences: prefsObject, // Return updated prefs
+       complianceStatus: updatedUser.complianceStatus, 
+    isKycVerified: updatedUser.isKycVerified, 
   });
 });
 
@@ -370,7 +375,7 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findById(userId)
-        .select('name role portfolio title bio skills createdAt') // Fields safe for public
+        .select('name role portfolio title bio skills createdAt complianceStatus') // Fields safe for public
         .populate('skills', 'name'); // Populate skill names
 
     // Only return profiles for 'pro' users publicly
