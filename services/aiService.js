@@ -81,25 +81,25 @@ const generateJobDescription = async (prompt) => {
  * @returns {Promise<{isSafe: boolean, violation?: string}>} - Result indicating safety and potential violation category.
  */
 const moderateContent = async (text) => {
-    if (!chatModel) {
+    // FIX: Use safetyModel, which is correctly initialized with strict safety settings
+    if (!safetyModel) { 
         console.warn("AI Moderation skipped: Service not configured.");
-        return { isSafe: true }; // Fail open if AI is down/not configured
+        return { isSafe: true }; 
     }
      if (!text || typeof text !== 'string' || text.trim() === '') {
-        return { isSafe: true }; // Empty text is considered safe
+        return { isSafe: true }; 
     }
 
     try {
         // Use generateContent with the text and rely on the pre-configured safety settings
-        // We only care if it gets blocked, not the generated content itself.
-        const result = await chatModel.generateContent(text);
+        // Relying on safetyModel for moderation
+        const result = await safetyModel.generateContent(text); // CORRECTED from chatModel
         const response = result.response;
 
         // Check if the response was blocked due to safety settings
         if (response.promptFeedback?.blockReason) {
             // Find the category that caused the block (highest probability)
             const highestViolation = response.promptFeedback.safetyRatings?.reduce((highest, current) => {
-                // Map threshold strings to numeric values for comparison if needed, or just find highest probability
                 // For simplicity, just return the first category that isn't NEGLIGIBLE or LOW
                  if (current.probability !== 'NEGLIGIBLE' && current.probability !== 'LOW') {
                      return current.category; // Return HarmCategory enum string

@@ -104,7 +104,7 @@ const sendNotification = async (io, userSockets, userId, notificationTypeKey, da
      switch (notificationTypeKey) {
         case 'NEW_MESSAGE':
             message = `New message from ${data.senderName || 'user'} re: Booking ${data.bookingId?.slice(-6)}`;
-            link = `/workspace/${data.bookingId}`;
+            link = `/messages?bookingId=${data.bookingId}`;
             subject = `New Message on ${appName}`;
             baseType = 'message';
             templateName = 'newMessage.ejs';

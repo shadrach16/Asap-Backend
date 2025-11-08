@@ -461,11 +461,13 @@ const getMyBookings = asyncHandler(async (req, res) => {
     }
 
     const { status } = req.query;
+
     const filter = { pro: req.user._id }; // Filter by the logged-in pro
 
     if (status && ['active', 'completed', 'pending_funding', 'in_dispute', 'cancelled'].includes(status)) {
         filter.status = status;
     }
+    console.log(req.user.role)
 
     // Find bookings, populate related job title and client name
     const bookings = await Booking.find(filter)
