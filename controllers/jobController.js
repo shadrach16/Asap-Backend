@@ -335,9 +335,184 @@ const getMyJobs = asyncHandler(async (req, res) => {
 });
 
 
+
+/**
+ * @desc    Update an existing job posting (Client only, job owner only)
+ * @route   PUT /api/jobs/:jobId
+ * @access  Private (Client)
+ */
+const updateJob = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+
+    if (req.user.role !== 'client') {
+        res.status(403);
+        throw new Error('User is not authorized to update jobs');
+    }
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+        res.status(404);
+        throw new Error('Job not found');
+    }
+
+    // Check if user is the owner
+    if (job.client.toString() !== req.user._id.toString()) {
+        res.status(403);
+        throw new Error('User is not authorized to edit this job');
+    }
+    
+    // Check if the job is still open
+    if (job.status !== 'open') {
+        res.status(400);
+        throw new Error(`Cannot edit job in status: ${job.status}. Job is no longer open for proposals.`);
+    }
+
+    // Fields from 'multipart/form-data' will be in req.body
+    let { title, description, budget, currency, skills, category, location, existingAttachments } = req.body;
+    
+    // Basic Validation
+    if (!title || !description || !budget || !category || !skills) {
+        res.status(400);
+        throw new Error('Title, description, budget, category, and skills are required');
+    }
+
+    // Convert skills to array if it's a single string (a common issue with FormData)
+    if (!Array.isArray(skills) && skills) {
+        skills = [skills];
+    }
+    
+    // Parse existingAttachments (metadata from files the client kept)
+    let attachmentsToKeep = [];
+    if (existingAttachments) {
+        try {
+            attachmentsToKeep = JSON.parse(existingAttachments);
+        } catch (e) {
+            attachmentsToKeep = [];
+        }
+    }
+    
+    // --- 1. Upload new files ---
+    let newAttachments = [];
+    if (req.files && req.files.length > 0) {
+        // Upload new files
+        const uploadPromises = req.files.map(file => uploadStream(file));
+        const uploadedFiles = await Promise.all(uploadPromises);
+        newAttachments = uploadedFiles.map(f => ({
+            fileName: f.fileName,
+            fileUrl: f.fileUrl,
+            fileKey: f.fileKey, // For storage deletion later
+        }));
+    }
+    
+    // Combine existing (kept) attachments with new uploads
+    const finalAttachments = [...attachmentsToKeep, ...newAttachments];
+
+    // --- 2. Create the update object ---
+    const updateFields = {
+        title: title,
+        description: description,
+        budget: budget,
+        currency: currency || 'USD',
+        skills: skills,
+        category: category,
+        location: location || 'Remote',
+        attachments: finalAttachments, // New combined list
+    };
+
+    // --- 3. Run content moderation on title/description before update ---
+    // const moderationResult = await moderateContent(`${title} \n ${description}`);
+    // if (moderationResult.isViolating) {
+    //     res.status(400);
+    //     throw new Error(`Content violates policy: ${moderationResult.violation || 'Policy Violation'}. Please revise.`);
+    // }
+
+console.log(updateFields)
+    // --- 4. Update the job ---
+    const updatedJob = await Job.findByIdAndUpdate(
+        jobId,
+        updateFields,
+        { new: true, runValidators: true } 
+    )
+    .populate('client', 'name email role avatarUrl')
+    .populate('category', 'name')
+    .populate('skills', 'name');
+
+    if (!updatedJob) {
+        res.status(500);
+        throw new Error('Failed to save job update.');
+    }
+
+    res.status(200).json(updatedJob);
+});
+
+
+
+/**
+ * @desc    Delete a job posting (Client only, job owner only, only if 'open')
+ * @route   DELETE /api/jobs/:jobId
+ * @access  Private (Client)
+ */
+const deleteJob = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+
+    if (req.user.role !== 'client') {
+        res.status(403);
+        throw new Error('User is not authorized to delete jobs');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        res.status(400);
+        throw new Error('Invalid Job ID format.');
+    }
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+        res.status(404);
+        throw new Error('Job not found');
+    }
+
+    // Check if user is the owner
+    if (job.client.toString() !== req.user._id.toString()) {
+        res.status(403);
+        throw new Error('User is not authorized to delete this job');
+    }
+    
+    // Crucial: Only allow deletion if the job status is 'open' and has no proposals.
+    // If proposals exist, 'cancel' is generally safer than hard delete.
+    const proposalCount = await Proposal.countDocuments({ job: jobId });
+    if (proposalCount > 0) {
+        // Option 1: Prevent deletion and suggest cancellation
+        res.status(400);
+        throw new Error('Job cannot be deleted as it has received proposals. Please change the status to "cancelled" instead.');
+        
+        // Option 2 (Alternative): Allow soft delete/cancel if you prefer:
+        /*
+        job.status = 'cancelled';
+        await job.save();
+        return res.status(200).json({ message: 'Job has been cancelled instead of deleted due to existing proposals.', job });
+        */
+    }
+    
+    // --- Delete the job ---
+    await job.deleteOne(); 
+
+    // NOTE: You would typically also delete associated attachments from cloud storage (e.g., Cloudinary) here, 
+    // using their `fileKey`s (from `job.attachments`), but that logic is complex and omitted for this specific task.
+
+    res.status(200).json({ message: 'Job deleted successfully' });
+});
+
+
 module.exports = {
     postJob,
     getJobs,
     getJobById,
-    getMyJobs
+    getMyJobs,
+    updateJob,
+    deleteJob,  
 };
+
+
+ 

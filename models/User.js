@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // --- Define Portfolio Item Sub-Schema ---
 const portfolioItemSchema = new mongoose.Schema({
@@ -111,6 +112,8 @@ const userSchema = new mongoose.Schema(
       of: notificationPreferenceSchema, 
       default: defaultNotificationPreferences 
     },
+    passwordResetToken: String,
+passwordResetExpires: Date,
   },
   { timestamps: true }
 );
@@ -132,6 +135,24 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   // 'this.password' refers to the hashed password from the DB
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+
+// After the schema definition, add this method:
+userSchema.methods.getResetPasswordToken = function() {
+    // Generate a plain token (sent in the email link)
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash the token and save the HASHED version to the DB
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // Set expiry time (e.g., 1 hour)
+    this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+
+    return resetToken; // Return the UNHASHED token for the email link
 };
 
 module.exports = mongoose.model('User', userSchema);

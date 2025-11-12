@@ -206,4 +206,5 @@ const sendNotification = async (io, userSockets, userId, notificationTypeKey, da
 module.exports = {
   // Only export sendNotification, internal functions are used by it
   sendNotification,
+  sendEmail
 };
